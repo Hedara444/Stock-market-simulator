@@ -1,0 +1,92 @@
+we need to create the user story and how the implementation will be . 
+
+
+here is a user's story : 
+the user view a list of stocks , then the user selects one of the stocks and then he gets a simi-real-time upates about the selected stock .  
+
+the admin on the other hand : monitor the system and gets statistics about it such as : 
+current user's traffic , RAM and CPU usage on the main server ,  status about the external api calls for the second server that generate a dummy stocks data ; ( such as the circuit braker status between the main server and the second server ) , and he  will have a controll over the second server where he can simulate a shotdown for the second server , and see how the sicruct braker and the Cache-Aside implementions .  
+
+
+when the second api is down , the normal user should see the last value of the stock value ( the cached value ) or if the stock does not have a cached value it should  fallback in a heartbeat .
+
+
+we will start setting up the second server that will generate the stock value ( we will mimic any simple algorithm to generate a stock value ) , and we will sett up a shared DB between the main server and the second server .  
+
+
+the tables that we need to generate :
+users , stocks , stock-values , admins , stock-controls .
+
+
+the user can see the stocks and monitor a selected stock in real time .
+
+the generated stocks values should be stored in stock-values table . 
+
+the admins will control the generated stock in the market ( like how the big monopolist  traders control the market ) ; where the admin can control all the stocks .
+
+
+in our scenario all the stocks will belong to companies  ; so the stock will represent a company , and for that admin will control som indicators such as company's earning , the golbal GDP for all the stocks , the posibility to make a good dessigon ; affects the stock price by gooing up ,  the posibility to make a bad dessigon the stock price by going down .
+
+
+the stock story :  
+
+we will follow the tick system where every tick represent a one hour  ; so 24 hours per day , 7 days a week . so the one cycle ( on week equals 168 ticks  ) ;  on every tick the following values will intervine with the stock price : 
+1- the initial price that got added by th admin .
+2- the controls of the stock ( the GDP , the possibility to make a good dessegion  , the possibility to make a bad dessigon , some random value depending on the current day that we are in  ( 1,2,3,4,5,6,7 ) , the previous price ( default is intial )  )  . these controlls  are controlled by the admin  .
+
+
+we will go with it step by step  , creating the MVP and prioritizing  implementing the  desgin patterns that we have discussed .  
+
+summary for the tasks that we need to do : 
+1- create the the second server  with admin managment ( stock values generator )   
+2-create the main server with user story ( can dispaly a list of stocks and show the real time updates of the stock value ) .
+. 
+
+we will user the following tech stack  : 
+Node js with express , postgres ,react js  .  
+
+
+
+endpointsthat we need to make : 
+admin side ( second server ) .
+1-simple auth system ( register , login with only user name ) {
+[POST : login , payload : user-name],
+[POST :logiin , payload : user-name]  
+
+} .    
+2-God mode for stocks : 
+ { 1- POST : stocks/create , payload : stock credentails with the stock's controls ( config ) . 
+   2-GET : stocks/list . get all stocks and their last registered value . 
+   3-GET : stocks/some-id , get the last stock's price  .
+   4-GET : stocks/some-id/history/interval-filter , get the history of the stock prices over a certain interval-filter : [1 hour , 1 day , 1 month ].  
+ 4-PUT : stocks/some-id , manipulate  the stock configs and see the impact in real time . 
+   5-PATCH :  toggle a stock's on and off ; mimic the stop of the service .
+  	
+}
+
+here we will need to represent the stock's manager ; 
+it is a background job that gets all the  stocks in the system , cache them out with their configs  , and generate their new values based on the formula that we have defined  , then insert them in bulk all at once in the DB .  
+
+the stock manager generates new value every 5 seconds ; so its cycle will be 5 seconds , in contrast this means in the one 'tick' it will generate : 
+ 12 *60 = 720  values for each stock in the one 'tick' in the system 
+  .  
+
+after generating the new stock values that stock's manager will add them to the DB and to the cache so we can take advanted to the Cache-Aside desgin pattern here  ; so when we call the endpoint that gets the latest tock price  , in the logic we first look upin the cache then we check in the DB . 
+
+ 
+
+the first step in the stock manager is to fetch the lsit of the stocks in the system to check if there is any new added stock , then it will add it to the cache with the other cached stocks , then follow the discribed logic . 
+
+the algorithm that generate the new values of the stock shoud be in the core of the system so it is only imported in the job and used in it . 
+
+
+for the architecture we will use the Layered Architecture  where we have the following layers : 
+1-routes : the endpoints . 
+2-controllers : pass the logic to the buisness layer. 
+3-buisness layer : holds the buisness logic for the called function , interact with the helper functions that are defined in the /helper directory  and the data access layer . 
+4-data access layer :  utilize the repository pattern and have a raw functions that takes  parameters and pass them to the sql query insde it . 
+
+note : we will have a DBHelper that will have a general function to make a DB calls .
+
+
+ 
