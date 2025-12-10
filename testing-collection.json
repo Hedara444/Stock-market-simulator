@@ -1,0 +1,279 @@
+{
+	"info": {
+		"_postman_id": "5d06c54b-f25d-4ad0-a310-879976ae95c2",
+		"name": "New Collection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "27082055",
+		"_collection_link": "https://planetary-equinox-914787.postman.co/workspace/sim-trader~8f9cfe35-79d4-4360-80ce-653163d8a92b/collection/27082055-5d06c54b-f25d-4ad0-a310-879976ae95c2?action=share&source=collection_link&creator=27082055"
+	},
+	"item": [
+		{
+			"name": "Main Server",
+			"item": [
+				{
+					"name": "fetch stocks value",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverB-URL}}/api/stocks/1",
+							"host": [
+								"{{serverB-URL}}"
+							],
+							"path": [
+								"api",
+								"stocks",
+								"1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Login/Register",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\r\n\"username\":\"new111\"\r\n\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseURL}}/api/admin/login",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"api",
+						"admin",
+						"login"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Success",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\r\n\"username\":\"new111\"\r\n\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/admin/login",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"login"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": null,
+					"header": [
+						{
+							"key": "X-Powered-By",
+							"value": "Express"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "Content-Length",
+							"value": "57"
+						},
+						{
+							"key": "ETag",
+							"value": "W/\"39-I2kFL2xTaRsT1laR+1J8Mr0p/u4\""
+						},
+						{
+							"key": "Date",
+							"value": "Tue, 25 Nov 2025 10:07:01 GMT"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=5"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"id\": 1,\n    \"username\": \"new111\",\n    \"token\": \"mock-admin-token-1\"\n}"
+				}
+			]
+		},
+		{
+			"name": "Create Stock",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \r\n    \r\n    \"ticker\": \"APPL\",\r\n     \"name\": \"Apple\",\r\n      \"initialPrice\": 420.00 \r\n      \r\n      }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseURL}}/api/admin/stocks/create",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"api",
+						"admin",
+						"stocks",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "List stocks",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/api/admin/stocks/list",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"api",
+						"admin",
+						"stocks",
+						"list"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get last stock price",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/api/admin/stocks/1",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"api",
+						"admin",
+						"stocks",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Control stock",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \r\n \"force_crash\": false ,\r\n \"volatility\": 0.03,\r\n \"good_news_chance\":0.57\r\n\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseURL}}/api/admin/stocks/3",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"api",
+						"admin",
+						"stocks",
+						"3"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get stock history",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/api/admin/stocks/1/history",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"api",
+						"admin",
+						"stocks",
+						"1",
+						"history"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "toggle stock",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \"isActive\": true }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseURL}}/api/admin/stocks/1/toggle",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"api",
+						"admin",
+						"stocks",
+						"1",
+						"toggle"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
