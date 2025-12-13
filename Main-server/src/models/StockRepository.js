@@ -1,17 +1,18 @@
 // src/models/StockRepository.js
 const axios = require('axios');
-const { Pool } = require('pg');
+const path = require('path');
+const fs = require('fs');
+const sqlite3 = require('sqlite3');
+const { open } = require('sqlite');
 require('dotenv').config();
 
 class StockRepository {
     constructor() {
-        // Setup DB Connection for Fallback access
-        this.pool = new Pool({
-            user: "postgres",
-            host: "localhost",
-            database: "stock_sim_db", // the DB name
-            password:"postgres", // the DB password
-            port: 5432,
+        const dbFile = process.env.SQLITE_DB_PATH || path.resolve(__dirname, '../../../data/stock_sim_db.sqlite');
+        fs.mkdirSync(path.dirname(dbFile), { recursive: true });
+        this.dbPromise = open({
+            filename: dbFile,
+            driver: sqlite3.Database
         });
 
         // URL of Server A (The Generator)
@@ -43,16 +44,17 @@ class StockRepository {
             SELECT s.ticker, s.name, sv.price 
             FROM stocks s
             JOIN stock_values sv ON s.id = sv.stock_id
-            WHERE s.id = $1
+            WHERE s.id = ?
             ORDER BY sv.created_at DESC
             LIMIT 1
         `;
 
-        const result = await this.pool.query(sql, [ticker]); // 'ticker' here acts as ID
-        if (result.rows.length > 0) {
+        const db = await this.dbPromise;
+        const row = await db.get(sql, [ticker]);
+        if (row) {
             return {
-                ...result.rows[0],
-                current_price: result.rows[0].price,
+                ...row,
+                current_price: row.price,
                 source: "database_fallback"
             };
         }

@@ -1,38 +1,33 @@
 // src/helpers/dbHelper.js
-const { Pool } = require('pg');
+const path = require('path');
+const fs = require('fs');
+const sqlite3 = require('sqlite3');
+const { open } = require('sqlite');
 require('dotenv').config();
 
-// const pool = new Pool({
-//     user: process.env.DB_USER,
-//     host: process.env.DB_HOST,
-//     database: process.env.DB_NAME,
-//     password: process.env.DB_PASSWORD,
-//     port: process.env.DB_PORT,
-// });
+const dbFile = process.env.SQLITE_DB_PATH || path.resolve(__dirname, '../../../data/stock_sim_db.sqlite');
+fs.mkdirSync(path.dirname(dbFile), { recursive: true });
 
-const pool = new Pool({
-    user: "postgres",
-    host: "localhost",
-    database: "stock_sim_db",
-    password:"postgres",
-    port: 5432,
+const dbPromise = open({
+    filename: dbFile,
+    driver: sqlite3.Database
 });
 
-console.log("DB_PASSWORD value being used:", process.env.DB_PASSWORD); // <-- ADD THIS LINE
-const query = async (text, params) => {
-    const start = Date.now();
-    try {
-        const res = await pool.query(text, params);
-        const duration = Date.now() - start;
-        // console.log('executed query', { text, duration, rows: res.rowCount });
-        return res;
-    } catch (error) {
-        console.error('Error executing query', { text, error });
-        throw error;
+
+const query = async (text, params = []) => {
+    const db = await dbPromise;
+    const isSelect = /^\s*select/i.test(text);
+    if (isSelect) {
+        const rows = await db.all(text, params);
+        return { rows, rowCount: rows.length };
+    } else {
+        const result = await db.run(text, params);
+        return { rows: [], rowCount: result.changes || 0 };
     }
 };
 
 module.exports = {
     query,
-    pool
+    db: dbPromise,
+    pool: null
 };

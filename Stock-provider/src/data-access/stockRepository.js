@@ -9,7 +9,7 @@ class StockRepository extends IStockRepository {
                    sc.volatility, sc.good_news_chance, sc.force_crash
             FROM stocks s
             JOIN stock_controls sc ON s.id = sc.stock_id
-            WHERE s.is_active = TRUE
+            WHERE s.is_active = 1
         `;
         const result = await db.query(sql);
         return result.rows;
@@ -18,63 +18,46 @@ class StockRepository extends IStockRepository {
     async bulkInsertStockValues(stockDataList) {
         if (stockDataList.length === 0) return;
 
-        const client = await db.pool.connect();
+        const conn = await db.db;
         try {
-            await client.query('BEGIN');
+            await conn.exec('BEGIN');
 
-            const values = [];
-            const valuePlaceholders = stockDataList
-                .map((_, i) => `($${i * 2 + 1}, $${i * 2 + 2})`)
-                .join(', ');
-
-            stockDataList.forEach(stock => {
-                values.push(stock.id, stock.newPrice);
-            });
-
-            const historyQuery = `INSERT INTO stock_values (stock_id, price) VALUES ${valuePlaceholders}`;
-            await client.query(historyQuery, values);
-
+            const insertStmt = await conn.prepare('INSERT INTO stock_values (stock_id, price) VALUES (?, ?)');
             for (const stock of stockDataList) {
-                await client.query('UPDATE stocks SET current_price = $1 WHERE id = $2', [stock.newPrice, stock.id]);
+                await insertStmt.run([stock.id, stock.newPrice]);
+                await conn.run('UPDATE stocks SET current_price = ? WHERE id = ?', [stock.newPrice, stock.id]);
             }
+            await insertStmt.finalize();
 
-            await client.query('COMMIT');
+            await conn.exec('COMMIT');
         } catch (e) {
-            await client.query('ROLLBACK');
+            await conn.exec('ROLLBACK');
             throw e;
-        } finally {
-            client.release();
         }
     }
 
     async createStock(ticker, name, initialPrice, controls) {
-        const client = await db.pool.connect();
+        const conn = await db.db;
         try {
-            await client.query('BEGIN');
+            await conn.exec('BEGIN');
 
-            const stockSql = `
-                INSERT INTO stocks (ticker, name, current_price) 
-                VALUES ($1, $2, $3) 
-                RETURNING id, ticker, name, current_price`;
-            const stockResult = await client.query(stockSql, [ticker, name, initialPrice]);
-            const stock = stockResult.rows[0];
+            const stockSql = `INSERT INTO stocks (ticker, name, current_price) VALUES (?, ?, ?)`;
+            const res = await conn.run(stockSql, [ticker, name, initialPrice]);
+            const stockId = res.lastID;
+            const stock = { id: stockId, ticker, name, current_price: initialPrice };
 
-            const controlsSql = `
-                INSERT INTO stock_controls (stock_id, volatility, good_news_chance)
-                VALUES ($1, $2, $3)`;
-            await client.query(controlsSql, [
-                stock.id,
+            const controlsSql = `INSERT INTO stock_controls (stock_id, volatility, good_news_chance) VALUES (?, ?, ?)`;
+            await conn.run(controlsSql, [
+                stockId,
                 controls.volatility,
                 controls.good_news_chance
             ]);
 
-            await client.query('COMMIT');
+            await conn.exec('COMMIT');
             return stock;
         } catch (e) {
-            await client.query('ROLLBACK');
+            await conn.exec('ROLLBACK');
             throw e;
-        } finally {
-            client.release();
         }
     }
 
@@ -96,35 +79,30 @@ class StockRepository extends IStockRepository {
                    sc.volatility, sc.good_news_chance, sc.force_crash
             FROM stocks s
             JOIN stock_controls sc ON s.id = sc.stock_id
-            WHERE s.id = $1
+            WHERE s.id = ?
         `;
         const result = await db.query(sql, [id]);
         return result.rows[0];
     }
 
     async updateStockControls(id, controls) {
-        const sql = `
-            UPDATE stock_controls 
-            SET volatility = $1, good_news_chance = $2, force_crash = $3
-            WHERE stock_id = $4
-            RETURNING *`;
-        const result = await db.query(sql, [
-            controls.volatility,
-            controls.good_news_chance,
-            controls.force_crash,
-            id
-        ]);
-        return result.rows[0];
+        const conn = await db.db;
+        await conn.run(
+            `UPDATE stock_controls 
+             SET volatility = ?, good_news_chance = ?, force_crash = ?
+             WHERE stock_id = ?`,
+            [controls.volatility, controls.good_news_chance, controls.force_crash, id]
+        );
+        const row = await conn.get(`SELECT * FROM stock_controls WHERE stock_id = ?`, [id]);
+        return row;
     }
 
     async toggleStockActiveStatus(id, isActive) {
-        const sql = `
-            UPDATE stocks 
-            SET is_active = $1
-            WHERE id = $2
-            RETURNING id, ticker, is_active`;
-        const result = await db.query(sql, [isActive, id]);
-        return result.rows[0];
+        const conn = await db.db;
+        const activeVal = isActive ? 1 : 0;
+        await conn.run(`UPDATE stocks SET is_active = ? WHERE id = ?`, [activeVal, id]);
+        const row = await conn.get(`SELECT id, ticker, is_active FROM stocks WHERE id = ?`, [id]);
+        return row;
     }
 }
 
